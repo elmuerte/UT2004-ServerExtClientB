@@ -6,7 +6,7 @@
     Released under the Open Unreal Mod License                          <br />
     http://wiki.beyondunreal.com/wiki/OpenUnrealModLicense
 
-    <!-- $Id: RSSFeedRecord.uc,v 1.2 2004/10/20 14:01:38 elmuerte Exp $ -->
+    <!-- $Id: RSSFeedRecord.uc,v 1.3 2005/12/28 14:46:19 elmuerte Exp $ -->
 *******************************************************************************/
 
 class RSSFeedRecord extends NewsFeed config(RSS);
@@ -48,9 +48,8 @@ function ProcessData(HttpSock sock)
             Entries[i].Link = fixHTMLSpecialsChars(Entries[i].Link);
             Entries[i].Desc = fixHTMLSpecialsChars(Entries[i].Desc);
         }
-
         LastUpdate = sock.now();
-        SaveConfig();
+        Save();
         Log("Updated RSS Feed"@rssHost, name);
     }
     else {
@@ -96,14 +95,26 @@ protected function string fixHTMLSpecialsChars(coerce string in)
     {
         in = repl(in, HTMLSpecialChars[i].from, HTMLSpecialChars[i].to);
     }
-    in = EscapeQuotes(in);
     return in;
 }
 
 /** dirty fix, because of a bug in ExportText not escaping them for structs */
 static function string EscapeQuotes(string in)
 {
+    if (InStr("\\\"", in) > -1) return in; // already escaped
     return repl(in, "\"", "\\\"");
+}
+
+/** Call this function instead of SaveConfig. It will make sure the slashes are properly escaped */
+function save()
+{
+    local int i;
+    for (i = 0; i < Entries.length; i++)
+    {
+        Entries[i].title = EscapeQuotes(Entries[i].title);
+        Entries[i].desc = EscapeQuotes(Entries[i].desc);
+    }
+    SaveConfig();
 }
 
 defaultproperties
